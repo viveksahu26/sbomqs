@@ -1004,7 +1004,7 @@ func spdxCompWithPrimaryDependency() (sbom.Document, sbom.GetComponent) {
 	allDepByName := getDepByName(deps)
 
 	if areAllDepesPresentInCompList {
-		DoesPrimaryCompHasRelationship = true
+		// DoesPrimaryCompHasRelationship = true
 		AllPrimaryDepenciesByName = allDepByName
 	}
 
@@ -1045,7 +1045,7 @@ func spdxCompWithTwoDependency() (sbom.Document, sbom.GetComponent) {
 
 	spec := sbom.NewSpec()
 	spec.SpecType = "spdx"
-	DoesPrimaryCompHasRelationship = true
+	// DoesPrimaryCompHasRelationship = true
 	doc := sbom.SpdxDoc{
 		Dependencies: dependencies,
 		SpdxSpec:     spec,
@@ -1108,7 +1108,7 @@ func cdxCompWithPrimaryDependency() (sbom.Document, sbom.GetComponent) {
 	})
 
 	if areAllDepesPresentInCompList {
-		DoesPrimaryCompHasRelationship = true
+		// DoesPrimaryCompHasRelationship = true
 		AllPrimaryDepenciesByName = allDepByName
 	}
 	return doc, comp
@@ -1157,7 +1157,7 @@ func cdxCompWithThreeDependency() (sbom.Document, sbom.GetComponent) {
 	// PrimaryDependencies[rel2.RefB.ID] = false
 	// PrimaryDependencies[rel3.RefB.ID] = false
 
-	DoesPrimaryCompHasRelationship = true
+	// DoesPrimaryCompHasRelationship = true
 	return doc, comp
 }
 
@@ -1184,7 +1184,7 @@ func cdxCompWithZeroDependency() (sbom.Document, sbom.GetComponent) {
 	}
 
 	// PrimaryDependencies[rel1.RefA.ID] = true
-	DoesPrimaryCompHasRelationship = true
+	// DoesPrimaryCompHasRelationship = true
 
 	return doc, comp
 }

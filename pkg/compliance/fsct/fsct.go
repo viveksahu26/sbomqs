@@ -167,30 +167,19 @@ func Components(doc sbom.Document) []*db.Record {
 	AllPrimaryDependencies := common.GetAllPrimaryComponentDependencies(doc)
 	fmt.Println("AllPrimaryDependencies: ", AllPrimaryDependencies)
 
-	if AllPrimaryDependencies == nil {
-		if len(doc.Components()) <= 1 {
-			RelationshipProvidedForPrimaryComp = true
-		}
+	areAllPrimaryDepesPresentInCompList := false
+	if len(AllPrimaryDependencies) == 0 {
 		RelationshipProvidedForPrimaryComp = false
+	} else {
+		areAllPrimaryDepesPresentInCompList = common.CheckPrimaryDependenciesInComponentList(AllPrimaryDependencies, ComponentList)
 	}
 
-	areAllPrimaryDepesPresentInCompList := common.CheckPrimaryDependenciesInComponentList(AllPrimaryDependencies, ComponentList)
 	allDepByName := common.GetDependenciesByName(AllPrimaryDependencies, CompIDWithName)
-	fmt.Println("allDepByName: ", allDepByName)
 
 	if areAllPrimaryDepesPresentInCompList {
 		RelationshipProvidedForPrimaryComp = true
 		AllPrimaryDepenciesByName = allDepByName
 	}
-
-	// areAllDepesPresentInCompList := common.CheckPrimaryDependenciesInComponentList(dependencies, ComponentList)
-	// allDepByName := common.GetDependenciesByName(dependencies, CompIDWithName)
-	// fmt.Println("allDepByName: ", allDepByName)
-
-	// if areAllDepesPresentInCompList {
-	// 	IsMinimimRequirementFulfilled = true
-	// 	GetAllPrimaryDepenciesByName = allDepByName
-	// }
 
 	for _, component := range doc.Components() {
 		records = append(records, fsctPackageName(component))
@@ -326,118 +315,60 @@ func fsctPackageHash(doc sbom.Document, component sbom.GetComponent) *db.Record 
 	return db.NewRecordStmt(COMP_CHECKSUM, common.UniqueElementID(component), result, score, maturity)
 }
 
-// func IsComponentPartOfPrimaryDependency(x []string, y string) bool {
-// 	for _, item := range x {
-// 		if item == y {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
 func fsctPackageDependencies(doc sbom.Document, component sbom.GetComponent) *db.Record {
 	result, score, maturity := "", 0.0, ""
 	var dependencies []string
-	compIsPartOfPrimaryDependency := false
-	var relationshipProvidedForComp bool
+	var compIsPartOfPrimaryDependency bool
 	var compWithDirectDependency bool
-	// var compWithRel bool
-	var compWithRelAndIncluded bool
 	var allDepByName []string
 
 	if doc.Spec().GetSpecType() == "spdx" {
-		dependencies = doc.GetRelationships(common.GetID(component.GetSpdxID()))
-		if len(dependencies) == 0 {
-			compWithDirectDependency = false
-		} else {
-			compWithDirectDependency = true
-		}
-	} else if doc.Spec().GetSpecType() == "cyclonedx" {
-	}
-
-	if doc.Spec().GetSpecType() == "spdx" {
-		if component.GetPrimaryCompInfo().IsPresent() {
-			result = strings.Join(AllPrimaryDepenciesByName, ", ")
-			score = 10.0
-			maturity = "Minimum"
-			// return db.NewRecordStmt(COMP_RELATIONSHIP, component.GetName(), result, score, maturity)
-		} else {
+		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
+			// maturity level: minimum
+			compIsPartOfPrimaryDependency = true
 			dependencies = doc.GetRelationships(common.GetID(component.GetSpdxID()))
-			if len(dependencies) == 0 {
-				// Check if the component is a part of primary dependency
-				if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
-					compIsPartOfPrimaryDependency = true
-					compWithDirectDependency = false
-				} else {
-					compIsPartOfPrimaryDependency = false
-					compWithDirectDependency = false
-				}
-			} else {
+			if len(dependencies) > 0 {
 				allDepByName = getDepByName(dependencies)
-
-				if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
-					compWithDirectDependency = true
-					compIsPartOfPrimaryDependency = true
-					allDepByName = append([]string{"included-in"}, allDepByName...)
-				} else {
-					// no dependency
-					compIsPartOfPrimaryDependency = false
-					compWithDirectDependency = true
-
-				}
+				compWithDirectDependency = true
 			}
+		} else {
+			// maturity level: none
+			compIsPartOfPrimaryDependency = false
 		}
 	} else if doc.Spec().GetSpecType() == "cyclonedx" {
-		if component.GetPrimaryCompInfo().IsPresent() {
-			result = strings.Join(AllPrimaryDepenciesByName, ", ")
-			score = 10.0
-			maturity = "Minimum"
-			// return db.NewRecordStmt(COMP_RELATIONSHIP, component.GetName(), result, score, maturity)
-		} else {
-
+		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
+			compIsPartOfPrimaryDependency = true
 			dependencies = doc.GetRelationships(component.GetID())
-			if len(dependencies) == 0 {
-				// Check if any one of the dependencies exists in the ComponentList
-				if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
-					compIsPartOfPrimaryDependency = true
-					compWithDirectDependency = false
-				} else {
-					compIsPartOfPrimaryDependency = false
-					compWithDirectDependency = true
-				}
-			} else {
+			if len(dependencies) > 0 {
 				allDepByName = getDepByName(dependencies)
-				if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
-					compWithRelAndIncluded = true
-					allDepByName = append([]string{"included-in"}, allDepByName...)
-				}
-				relationshipProvidedForComp = true
+				compWithDirectDependency = true
 			}
+		} else {
+			compIsPartOfPrimaryDependency = false
 		}
 	}
 
-	// relationship declared for primary comp and direct dependencies
 	switch {
+	// when component itself is a primary component
+	case RelationshipProvidedForPrimaryComp && component.GetPrimaryCompInfo().IsPresent():
+		score = 10.0
+		maturity = "Minimum"
+		result = strings.Join(AllPrimaryDepenciesByName, ", ")
+
+	// when comp is a dependency of priamry with no direct dependencies
 	case RelationshipProvidedForPrimaryComp && compIsPartOfPrimaryDependency:
-		score = 12.0
-		maturity = "Recommended"
+		score = 10.0
+		maturity = "Minimum"
 		result = strings.Join(allDepByName, ", ")
-	case RelationshipProvidedForPrimaryComp && relationshipProvidedForComp:
-		score = 12.0
-		maturity = "Recommended"
-		result = strings.Join(allDepByName, ", ")
-	case RelationshipProvidedForPrimaryComp && compWithRelAndIncluded:
-		score = 12.0
-		maturity = "Recommended"
-		result = strings.Join(allDepByName, ", ")
-	case RelationshipProvidedForPrimaryComp && relationshipProvidedForComp:
+
+		// when comp is a dependency of priamry with a direct dependencies
+	case RelationshipProvidedForPrimaryComp && compIsPartOfPrimaryDependency && compWithDirectDependency:
 		score = 12.0
 		maturity = "Recommended"
 		result = strings.Join(allDepByName, ", ")
 	default:
 		score = 0.0
 		maturity = "None"
-
 	}
 
 	return db.NewRecordStmt(COMP_RELATIONSHIP, common.UniqueElementID(component), result, score, maturity)
