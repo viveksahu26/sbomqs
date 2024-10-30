@@ -311,9 +311,9 @@ func bsiSbomURI(doc sbom.Document) *db.Record {
 }
 
 var (
-	bsiCompIDWithName               = make(map[string]string)
-	bsiComponentList                = make(map[string]bool)
-	bsiPrimaryDependencies          = make(map[string]bool)
+	bsiCompIDWithName = make(map[string]string)
+	bsiComponentList  = make(map[string]bool)
+	// bsiPrimaryDependencies          = make(map[string]bool)
 	bsiGetAllPrimaryDepenciesByName = []string{}
 )
 
@@ -327,12 +327,12 @@ func bsiComponents(doc sbom.Document) []*db.Record {
 
 	bsiCompIDWithName = common.ComponentsNamesMapToIDs(doc)
 	bsiComponentList = common.ComponentsLists(doc)
-	bsiPrimaryDependencies = common.MapPrimaryDependencies(doc)
-	dependencies := common.GetAllPrimaryComponentDependencies(doc)
-	isBsiAllDepesPresentInCompList := common.CheckPrimaryDependenciesInComponentList(dependencies, bsiComponentList)
+	// bsiPrimaryDependencies = common.MapPrimaryDependencies(doc)
+	allprimarydependencies := common.GetAllPrimaryComponentDependencies(doc)
+	isBsiAllDepesPresentInCompList := common.CheckPrimaryDependenciesInComponentList(allprimarydependencies, bsiComponentList)
 
 	if isBsiAllDepesPresentInCompList {
-		bsiGetAllPrimaryDepenciesByName = common.GetDependenciesByName(dependencies, bsiCompIDWithName)
+		bsiGetAllPrimaryDepenciesByName = common.GetDependenciesByName(allprimarydependencies, bsiCompIDWithName)
 	}
 
 	for _, component := range doc.Components() {
@@ -367,13 +367,14 @@ func bsiComponentDepth(doc sbom.Document, component sbom.GetComponent) *db.Recor
 
 		dependencies = doc.GetRelationships(common.GetID(component.GetSpdxID()))
 		if dependencies == nil {
-			if bsiPrimaryDependencies[common.GetID(component.GetSpdxID())] {
+			common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
 				return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "included-in", 10.0, "")
 			}
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "no-relationship", 0.0, "")
 		}
 		allDepByName = common.GetDependenciesByName(dependencies, bsiCompIDWithName)
-		if bsiPrimaryDependencies[common.GetID(component.GetSpdxID())] {
+		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
+			// if bsiPrimaryDependencies[common.GetID(component.GetSpdxID())] {
 			allDepByName = append([]string{"included-in"}, allDepByName...)
 			result = strings.Join(allDepByName, ", ")
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), result, 10.0, "")
@@ -390,13 +391,15 @@ func bsiComponentDepth(doc sbom.Document, component sbom.GetComponent) *db.Recor
 		id := component.GetID()
 		dependencies = doc.GetRelationships(id)
 		if len(dependencies) == 0 {
-			if bsiPrimaryDependencies[id] {
+			if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
+				// if bsiPrimaryDependencies[id] {
 				return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "included-in", 10.0, "")
 			}
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "no-relationship", 0.0, "")
 		}
 		allDepByName = common.GetDependenciesByName(dependencies, bsiCompIDWithName)
-		if bsiPrimaryDependencies[id] {
+		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
+			// if bsiPrimaryDependencies[id] {
 			allDepByName = append([]string{"included-in"}, allDepByName...)
 			result = strings.Join(allDepByName, ", ")
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), result, 10.0, "")

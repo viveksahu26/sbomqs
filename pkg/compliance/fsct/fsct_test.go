@@ -1004,11 +1004,11 @@ func spdxCompWithPrimaryDependency() (sbom.Document, sbom.GetComponent) {
 	allDepByName := getDepByName(deps)
 
 	if areAllDepesPresentInCompList {
-		IsMinimimRequirementFulfilled = true
-		GetAllPrimaryDepenciesByName = allDepByName
+		DoesPrimaryCompHasRelationship = true
+		AllPrimaryDepenciesByName = allDepByName
 	}
 
-	GetAllPrimaryDepenciesByName = []string{"go-spdx", "lo", "packageurl-go"}
+	AllPrimaryDepenciesByName = []string{"go-spdx", "lo", "packageurl-go"}
 
 	return doc, comp
 }
@@ -1039,12 +1039,13 @@ func spdxCompWithTwoDependency() (sbom.Document, sbom.GetComponent) {
 
 	CompIDWithName[rel1.RefB.ID] = "circl"
 	CompIDWithName[rel2.RefB.ID] = "crypto"
-	PrimaryDependencies[rel1.RefB.ID] = false
-	PrimaryDependencies[rel2.RefB.ID] = false
+
+	// PrimaryDependencies[rel1.RefB.ID] = false
+	// PrimaryDependencies[rel2.RefB.ID] = false
 
 	spec := sbom.NewSpec()
 	spec.SpecType = "spdx"
-	IsMinimimRequirementFulfilled = true
+	DoesPrimaryCompHasRelationship = true
 	doc := sbom.SpdxDoc{
 		Dependencies: dependencies,
 		SpdxSpec:     spec,
@@ -1107,8 +1108,8 @@ func cdxCompWithPrimaryDependency() (sbom.Document, sbom.GetComponent) {
 	})
 
 	if areAllDepesPresentInCompList {
-		IsMinimimRequirementFulfilled = true
-		GetAllPrimaryDepenciesByName = allDepByName
+		DoesPrimaryCompHasRelationship = true
+		AllPrimaryDepenciesByName = allDepByName
 	}
 	return doc, comp
 }
@@ -1152,11 +1153,11 @@ func cdxCompWithThreeDependency() (sbom.Document, sbom.GetComponent) {
 	CompIDWithName[rel2.RefB.ID] = "github.com/google/go-querystring"
 	CompIDWithName[rel3.RefB.ID] = "oauth2"
 
-	PrimaryDependencies[rel1.RefB.ID] = false
-	PrimaryDependencies[rel2.RefB.ID] = false
-	PrimaryDependencies[rel3.RefB.ID] = false
+	// PrimaryDependencies[rel1.RefB.ID] = false
+	// PrimaryDependencies[rel2.RefB.ID] = false
+	// PrimaryDependencies[rel3.RefB.ID] = false
 
-	IsMinimimRequirementFulfilled = true
+	DoesPrimaryCompHasRelationship = true
 	return doc, comp
 }
 
@@ -1182,8 +1183,8 @@ func cdxCompWithZeroDependency() (sbom.Document, sbom.GetComponent) {
 		CdxSpec:      spec,
 	}
 
-	PrimaryDependencies[rel1.RefA.ID] = true
-	IsMinimimRequirementFulfilled = true
+	// PrimaryDependencies[rel1.RefA.ID] = true
+	DoesPrimaryCompHasRelationship = true
 
 	return doc, comp
 }

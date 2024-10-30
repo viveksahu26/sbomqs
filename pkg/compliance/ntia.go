@@ -220,9 +220,9 @@ func ntiaSbomCreatedTimestamp(doc sbom.Document) *db.Record {
 }
 
 var (
-	compIDWithName               = make(map[string]string)
-	componentList                = make(map[string]bool)
-	primaryDependencies          = make(map[string]bool)
+	compIDWithName = make(map[string]string)
+	componentList  = make(map[string]bool)
+	// primaryDependencies          = make(map[string]bool)
 	GetAllPrimaryDepenciesByName = []string{}
 )
 
@@ -237,12 +237,12 @@ func ntiaComponents(doc sbom.Document) []*db.Record {
 
 	compIDWithName = common.ComponentsNamesMapToIDs(doc)
 	componentList = common.ComponentsLists(doc)
-	primaryDependencies = common.MapPrimaryDependencies(doc)
-	dependencies := common.GetAllPrimaryComponentDependencies(doc)
-	areAllDepesPresentInCompList := common.CheckPrimaryDependenciesInComponentList(dependencies, componentList)
+	// primaryDependencies = common.MapPrimaryDependencies(doc)
+	allprimarydependencies := common.GetAllPrimaryComponentDependencies(doc)
+	areAllDepesPresentInCompList := common.CheckPrimaryDependenciesInComponentList(allprimarydependencies, componentList)
 
 	if areAllDepesPresentInCompList {
-		GetAllPrimaryDepenciesByName = common.GetDependenciesByName(dependencies, compIDWithName)
+		GetAllPrimaryDepenciesByName = common.GetDependenciesByName(allprimarydependencies, compIDWithName)
 	}
 
 	for _, component := range doc.Components() {
@@ -320,7 +320,8 @@ func ntiaComponentDependencies(doc sbom.Document, component sbom.GetComponent) *
 		dependencies = doc.GetRelationships(common.GetID(component.GetSpdxID()))
 		if dependencies == nil {
 
-			if primaryDependencies[common.GetID(component.GetSpdxID())] {
+			if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
+				// if primaryDependencies[common.GetID(component.GetSpdxID())] {
 				return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "included-in", 10.0, "")
 			}
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "no-relationship", 0.0, "")
@@ -328,7 +329,8 @@ func ntiaComponentDependencies(doc sbom.Document, component sbom.GetComponent) *
 		}
 		allDepByName = common.GetDependenciesByName(dependencies, compIDWithName)
 
-		if primaryDependencies[common.GetID(component.GetSpdxID())] {
+		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
+			// if primaryDependencies[common.GetID(component.GetSpdxID())] {
 			allDepByName = append([]string{"included-in"}, allDepByName...)
 			result = strings.Join(allDepByName, ", ")
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), result, 10.0, "")
@@ -346,13 +348,15 @@ func ntiaComponentDependencies(doc sbom.Document, component sbom.GetComponent) *
 		id := component.GetID()
 		dependencies = doc.GetRelationships(id)
 		if len(dependencies) == 0 {
-			if primaryDependencies[id] {
+			if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
+				// if primaryDependencies[id] {
 				return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "included-in", 10.0, "")
 			}
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "no-relationship", 0.0, "")
 		}
 		allDepByName = common.GetDependenciesByName(dependencies, compIDWithName)
-		if primaryDependencies[id] {
+		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
+			// if primaryDependencies[id] {
 			allDepByName = append([]string{"included-in"}, allDepByName...)
 			result = strings.Join(allDepByName, ", ")
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), result, 10.0, "")

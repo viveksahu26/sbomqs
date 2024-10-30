@@ -353,6 +353,7 @@ func (s *SpdxDoc) parsePrimaryCompAndRelationships() {
 			if CleanKey(string(aBytes)) == s.PrimaryComponent.ID {
 				totalDependencies++
 				s.PrimaryComponent.HasDependency = true
+				s.PrimaryComponent.AllDependencies = append(s.PrimaryComponent.AllDependencies, CleanKey(string(bBytes)))
 				s.Dependencies[CleanKey(string(aBytes))] = append(s.Dependencies[CleanKey(string(aBytes))], CleanKey(string(bBytes)))
 
 			} else {

@@ -332,15 +332,28 @@ func copyC(cdxc *cydx.Component, c *CdxDoc) *Component {
 			nc.DownloadLocation = downloads[0].URL
 		}
 	}
+	fmt.Println("cdxc.Name: ", cdxc.Name)
+	fmt.Println("c.PrimaryComponent.Name: ", c.PrimaryComponent.Name)
 
-	if cdxc.BOMRef == c.PrimaryComponent.ID {
-		pc := PrimaryComp{}
-		pc.Name = cdxc.Name
-		pc.ID = cdxc.BOMRef
-		pc.Present = true
-		nc.isPrimary = true
-		nc.PrimaryCompt = pc
+	if cdxc.Name == c.PrimaryComponent.Name {
+		nc.PrimaryCompt = c.PrimaryComponent
+		// fmt.Println("cdxc.Name == c.PrimaryComponent.Name")
+		// pc := PrimaryComp{}
+		// pc.Name = cdxc.Name
+		// pc.ID = cdxc.BOMRef
+		// pc.Present = true
+		// nc.isPrimary = true
+		// nc.PrimaryCompt = pc
 	}
+	// else {
+	// 	fmt.Println("cdxc.Name != c.PrimaryComponent.Name")
+	// 	pc := PrimaryComp{}
+	// 	pc.Name = c.PrimaryComponent.Name
+	// 	pc.ID = c.PrimaryComponent.ID
+	// 	pc.Present = true
+	// 	nc.isPrimary = false
+	// 	nc.PrimaryCompt = pc
+	// }
 	nc.ID = cdxc.BOMRef
 	return nc
 }
@@ -581,9 +594,11 @@ func (c *CdxDoc) parsePrimaryCompAndRelationships() {
 			nr.To = d
 			if r.Ref == c.PrimaryComponent.ID {
 				c.PrimaryComponent.HasDependency = true
+				c.PrimaryComponent.AllDependencies = append(c.PrimaryComponent.AllDependencies, d)
 				totalDependencies++
 				c.rels = append(c.rels, nr)
 				c.Dependencies[c.PrimaryComponent.ID] = append(c.Dependencies[c.PrimaryComponent.ID], d)
+
 			} else {
 				c.rels = append(c.rels, nr)
 				c.Dependencies[r.Ref] = append(c.Dependencies[r.Ref], d)
