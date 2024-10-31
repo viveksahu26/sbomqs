@@ -321,6 +321,7 @@ func fsctPackageDependencies(doc sbom.Document, component sbom.GetComponent) *db
 	var allDepByName []string
 
 	if doc.Spec().GetSpecType() == "spdx" {
+		// Is this comp part of primary comp depndencies
 		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
 			// maturity level: minimum
 			compIsPartOfPrimaryDependency = true
@@ -334,8 +335,11 @@ func fsctPackageDependencies(doc sbom.Document, component sbom.GetComponent) *db
 			compIsPartOfPrimaryDependency = false
 		}
 	} else if doc.Spec().GetSpecType() == "cyclonedx" {
+		// Is this comp part of primary comp depndencies
 		if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), component.GetID()) {
 			compIsPartOfPrimaryDependency = true
+
+			// does this comp has direct dependencies
 			dependencies = doc.GetRelationships(component.GetID())
 			if len(dependencies) > 0 {
 				allDepByName = getDepByName(dependencies)
@@ -359,11 +363,13 @@ func fsctPackageDependencies(doc sbom.Document, component sbom.GetComponent) *db
 		maturity = "Minimum"
 		result = strings.Join(allDepByName, ", ")
 
-		// when comp is a dependency of priamry with a direct dependencies
+	// when comp is a dependency of priamary with a direct dependencies
 	case RelationshipProvidedForPrimaryComp && compIsPartOfPrimaryDependency && compWithDirectDependency:
 		score = 12.0
 		maturity = "Recommended"
 		result = strings.Join(allDepByName, ", ")
+
+	// when a comp is not a part primary dependnecies or primary comp with no dependencies
 	default:
 		score = 0.0
 		maturity = "None"
