@@ -367,7 +367,7 @@ func bsiComponentDepth(doc sbom.Document, component sbom.GetComponent) *db.Recor
 
 		dependencies = doc.GetRelationships(common.GetID(component.GetSpdxID()))
 		if dependencies == nil {
-			common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
+			if common.IsComponentPartOfPrimaryDependency(doc.PrimaryComp().GetDependencies(), common.GetID(component.GetSpdxID())) {
 				return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "included-in", 10.0, "")
 			}
 			return db.NewRecordStmt(COMP_DEPTH, common.UniqueElementID(component), "no-relationship", 0.0, "")

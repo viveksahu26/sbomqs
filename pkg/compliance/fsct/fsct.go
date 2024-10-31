@@ -16,7 +16,6 @@ package fsct
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/interlynk-io/sbomqs/pkg/compliance/common"
@@ -165,7 +164,6 @@ func Components(doc sbom.Document) []*db.Record {
 
 	// get all primary dependencies
 	AllPrimaryDependencies := common.GetAllPrimaryComponentDependencies(doc)
-	fmt.Println("AllPrimaryDependencies: ", AllPrimaryDependencies)
 
 	areAllPrimaryDepesPresentInCompList := false
 	if len(AllPrimaryDependencies) == 0 {
